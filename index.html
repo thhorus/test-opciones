@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Test de Opción Múltiple</title>
+<style>
+  /* Reset and base */
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #121212;
+    margin: 0; padding: 0;
+    color: #eee;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+  header {
+    background-color: #1f2937;
+    color: #60a5fa;
+    padding: 1rem 2rem;
+    text-align: center;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.8);
+  }
+  header h1 {
+    margin: 0;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: #3b82f6;
+  }
+  main {
+    flex-grow: 1;
+    max-width: 720px;
+    margin: 2rem auto;
+    background: #1e293b;
+    border-radius: 10px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 4px 20px rgb(0 0 0 / 0.7);
+  }
+  h2 {
+    margin-top: 0;
+    color: #60a5fa;
+    font-weight: 600;
+    border-bottom: 2px solid #3b82f6;
+    padding-bottom: 0.25rem;
+    margin-bottom: 1.5rem;
+  }
+  .question-container {
+    margin-bottom: 2rem;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 1rem;
+  }
+  .question-text {
+    font-size: 1.15rem;
+    margin-bottom: 0.6rem;
+    font-weight: 700;
+    color: #bfdbfe;
+  }
+  .options {
+    list-style: none;
+    padding-left: 0;
+    margin-top: 0;
+  }
+  .options li {
+    margin-bottom: 0.7rem;
+  }
+  input[type="radio"] {
+    margin-right: 0.6rem;
+    cursor: pointer;
+    accent-color: #3b82f6;
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+  }
+  label {
+    cursor: pointer;
+    font-weight: 500;
+    color: #e0e7ff;
+    user-select: none;
+    font-size: 1rem;
+    line-height: 1.4;
+  }
+  button {
+    background-color: #3b82f6;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.8rem;
+    font-size: 1.15rem;
+    border-radius: 7px;
+    cursor: pointer;
+    transition: background-color 0.3s ease-in-out, box-shadow 0.2s;
+    font-weight: 700;
+    box-shadow: 0 3px 8px rgb(59 130 246 / 0.6);
+    user-select: none;
+    outline-offset: 4px;
+  }
+  button:hover, button:focus-visible {
+    background-color: #2563eb;
+    box-shadow: 0 5px 20px rgb(37 99 235 / 0.8);
+    outline: none;
+  }
+  .result {
+    background-color: #334155;
+    border: 2px solid #3b82f6;
+    border-radius: 10px;
+    padding: 1.2rem 1.7rem;
+    margin-top: 1.4rem;
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: #a5b4fc;
+    text-align: center;
+    user-select: text;
+    box-shadow: 0 0 12px #3b82f6aa;
+  }
+  .answer-feedback {
+    font-style: italic;
+    font-size: 0.95rem;
+    margin-top: 0.3rem;
+    user-select: text;
+  }
+  .correct {
+    color: #4ade80;
+  }
+  .incorrect {
+    color: #f87171;
+  }
+  .footer {
+    text-align: center;
+    padding: 1rem;
+    font-size: 0.9rem;
+    color: #94a3b8;
+    user-select: none;
+    background: #1f2937;
+    box-shadow: 0 -2px 8px rgb(0 0 0 / 0.7);
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Test de Opción Múltiple</h1>
+</header>
+<main>
+  <section id="test-section">
+    <h2>Realiza el Test</h2>
+    <form id="test-form"></form>
+    <button id="submit-test" style="display:none;">Enviar respuestas</button>
+    <div id="result-container"></div>
+    <button id="restart" style="display:none; margin-top:1rem;">Reiniciar</button>
+  </section>
+</main>
+<footer class="footer">
+  &copy; 2024 Test Personalizable
+</footer>
+<script>
+  (function() {
+    const testForm = document.getElementById('test-form');
+    const submitTestBtn = document.getElementById('submit-test');
+    const resultContainer = document.getElementById('result-container');
+    const restartBtn = document.getElementById('restart');
+
+    // Preguntas definidas directamente aquí
+    const questionsData = [
+      {
+        question: "¿Cuál es la capital de España?",
+        options: ["Madrid", "Barcelona", "Valencia", "Sevilla"],
+        answer: 0
+      },
+      {
+        question: "¿En qué año llegó el hombre a la Luna?",
+        options: ["1965", "1969", "1972", "1959"],
+        answer: 1
+      },
+      {
+        question: "¿Cuál es el elemento químico con símbolo O?",
+        options: ["Oxígeno", "Oro", "Osmio", "Plata"],
+        answer: 0
+      }
+    ];
+
+    // Crear elementos con atributos (helper)
+    function createElement(type, attrs = {}, ...children) {
+      const el = document.createElement(type);
+      for(const key in attrs) {
+        if(key === 'className') el.className = attrs[key];
+        else if (key.startsWith('aria')) el.setAttribute(key, attrs[key]);
+        else if(key === 'htmlFor') el.htmlFor = attrs[key];
+        else el[key] = attrs[key];
+      }
+      for(const child of children) {
+        if (typeof child === 'string') {
+          el.appendChild(document.createTextNode(child));
+        } else if (child instanceof Node) {
+          el.appendChild(child);
+        }
+      }
+      return el;
+    }
+
+    // Construir formulario del test
+    function buildTestForm(questions) {
+      testForm.innerHTML = ''; // reset
+      resultContainer.innerHTML = '';
+      submitTestBtn.style.display = 'inline-block';
+      restartBtn.style.display = 'none';
+
+      questions.forEach((q, i) => {
+        const container = createElement('div', {className:'question-container'});
+
+        const qText = createElement('div', {className:'question-text'}, `${i+1}. ${q.question}`);
+        container.appendChild(qText);
+
+        const ul = createElement('ul', {className:'options'});
+
+        q.options.forEach((opt, idx) => {
+          const optionId = `q${i}_opt${idx}`;
+          const li = createElement('li');
+          const label = createElement('label', {htmlFor: optionId});
+          const radio = createElement('input', {
+            type: 'radio',
+            name: `question${i}`,
+            id: optionId,
+            value: idx,
+            required: true
+          });
+          label.appendChild(radio);
+          label.appendChild(document.createTextNode(opt));
+          li.appendChild(label);
+          ul.appendChild(li);
+        });
+
+        container.appendChild(ul);
+        testForm.appendChild(container);
+      });
+    }
+
+    // Mostrar resultados
+    function showResults(answers) {
+      let correctCount = 0;
+      resultContainer.innerHTML = '';
+      submitTestBtn.style.display = 'none';
+      restartBtn.style.display = 'inline-block';
+
+      questionsData.forEach((q,i) => {
+        const userAnswer = answers.get(`question${i}`);
+        const isCorrect = Number(userAnswer) === q.answer;
+        if(isCorrect) correctCount++;
+
+        const container = createElement('div', {className:'question-container'});
+        const qText = createElement('div', {className:'question-text'}, `${i+1}. ${q.question}`);
+        container.appendChild(qText);
+
+        const feedback = createElement('div', {className: 'answer-feedback ' + (isCorrect ? 'correct' : 'incorrect')});
+        if(isCorrect) {
+          feedback.textContent = `Correcto ✅`;
+        } else {
+          feedback.textContent = `Incorrecto ❌. Respuesta correcta: "${q.options[q.answer]}"`;
+        }
+        container.appendChild(feedback);
+        resultContainer.appendChild(container);
+      });
+
+      const summary = createElement('div', {className:'result'}, `Has respondido correctamente ${correctCount} de ${questionsData.length} preguntas.`);
+      resultContainer.insertBefore(summary, resultContainer.firstChild);
+    }
+
+    // Iniciar test
+    buildTestForm(questionsData);
+
+    // Mostrar botón enviar después de cargar preguntas
+    submitTestBtn.style.display = 'inline-block';
+
+    submitTestBtn.addEventListener('click', () => {
+      const formData = new FormData(testForm);
+
+      // Verificar que todas las preguntas tienen respuesta
+      for(let i=0; i<questionsData.length; i++) {
+        if(!formData.has(`question${i}`)) {
+          alert(`Por favor responde la pregunta ${i+1}.`);
+          return;
+        }
+      }
+      showResults(formData);
+    });
+
+    restartBtn.addEventListener('click', () => {
+      // Reiniciar todo para hacer el test nuevamente
+      resultContainer.innerHTML = '';
+      buildTestForm(questionsData);
+      submitTestBtn.style.display = 'inline-block';
+      restartBtn.style.display = 'none';
+    });
+  })();
+</script>
+</body>
+</html>

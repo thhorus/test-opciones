@@ -75,6 +75,10 @@
     height: 18px;
     vertical-align: middle;
   }
+  input[type="radio"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
   label {
     cursor: pointer;
     font-weight: 500;
@@ -82,6 +86,10 @@
     user-select: none;
     font-size: 1rem;
     line-height: 1.4;
+  }
+  label:has(input[type="radio"]:disabled) {
+    cursor: not-allowed;
+    opacity: 0.7;
   }
   button {
     background-color: #3b82f6;
@@ -97,10 +105,16 @@
     user-select: none;
     outline-offset: 4px;
   }
-  button:hover, button:focus-visible {
+  button:hover:not(:disabled), button:focus-visible:not(:disabled) {
     background-color: #2563eb;
     box-shadow: 0 5px 20px rgb(37 99 235 / 0.8);
     outline: none;
+  }
+  button:disabled {
+    background-color: #4b5563;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.6;
   }
   .result {
     background-color: #334155;
@@ -136,6 +150,15 @@
     background: #1f2937;
     box-shadow: 0 -2px 8px rgb(0 0 0 / 0.7);
   }
+  #start-section {
+    text-align: center;
+    padding: 2rem 0;
+  }
+  #start-section p {
+    color: #94a3b8;
+    font-size: 1.1rem;
+    margin: 1rem 0;
+  }
 </style>
 </head>
 <body>
@@ -143,7 +166,13 @@
   <h1>Test de Opción Múltiple</h1>
 </header>
 <main>
-  <section id="test-section">
+  <section id="start-section">
+    <h2>Preparado para comenzar el test?</h2>
+    <p>Tienes 2 minutos para responder todas las preguntas.</p>
+    <button id="start-btn">Iniciar Test</button>
+  </section>
+  <section id="test-section" style="display:none;">
+    <div id="timer" style="display:none; text-align: center; font-size: 1.5rem; color: #60a5fa; margin: 1rem 0; font-weight: bold;"></div>
     <h2>Realiza el Test</h2>
     <form id="test-form"></form>
     <button id="submit-test" style="display:none;">Enviar respuestas</button>
@@ -156,28 +185,55 @@
 </footer>
 <script>
   (function() {
+    const startSection = document.getElementById('start-section');
+    const testSection = document.getElementById('test-section');
+    const startBtn = document.getElementById('start-btn');
     const testForm = document.getElementById('test-form');
     const submitTestBtn = document.getElementById('submit-test');
     const resultContainer = document.getElementById('result-container');
     const restartBtn = document.getElementById('restart');
+    const timer = document.getElementById('timer');
 
-    // Preguntas definidas directamente aquí
+    let timerInterval;
+    let timeLeft = 120;
+
+    // Preguntas definidas 
     const questionsData = [
       {
-        question: "¿Cuál es la capital de España?",
-        options: ["Madrid", "Barcelona", "Valencia", "Sevilla"],
-        answer: 0
-      },
-      {
-        question: "¿En qué año llegó el hombre a la Luna?",
-        options: ["1965", "1969", "1972", "1959"],
+        question: "¿En que año terminó de disolverse Yugoslavia?",
+        options: ["2003", "2006", "1991", "1998"],
         answer: 1
       },
       {
-        question: "¿Cuál es el elemento químico con símbolo O?",
-        options: ["Oxígeno", "Oro", "Osmio", "Plata"],
+        question: "¿Kosovo es un país?",
+        options: ["si", "no", "sigue en disputa"],
+        answer: 2
+      },
+       {
+        question: "¿Por que fue importante Tito?",
+        options: ["ayudó a la conformacióm de una identidad nacional", "usó el capitalismo para unificar el país"],
         answer: 0
-      }
+      },
+       {
+        question: "Yugoslavia se dividió de forma pacífica",
+        options: ["Verdadero", "falso"],
+        answer: 1
+      },
+       {
+        question: "¿Fue Serbia el país mas conflictivo?",
+        options: ["Si", "No"],
+        answer: 0
+      },
+       {
+        question: "Seleccionar los países que no tuvieron guerras por su independencia",
+        options: ["Solo Croacia", "Bosnia y Eslovenia", "Eslovenia y Croacia", "Solo Macedonia"],
+        answer: 3
+      },
+       {
+        question: "¿Alguna persona luego de Tito pudo sostener la política yugoslava?",
+        options: ["Si", "No"],
+        answer: 1
+      },
     ];
 
     // Crear elementos con atributos (helper)
@@ -199,12 +255,44 @@
       return el;
     }
 
+    // Actualizar display del timer
+    function updateTimerDisplay() {
+      const mins = Math.floor(timeLeft / 60);
+      const secs = timeLeft % 60;
+      timer.textContent = `Tiempo restante: ${mins}:${secs.toString().padStart(2, '0')}`;
+      if (timeLeft <= 10) {
+        timer.style.color = '#f87171'; // Rojo si queda poco tiempo
+      }
+    }
+
+    // Iniciar timer
+    function startTimer() {
+      timer.style.display = 'block';
+      timeLeft = 90;
+      updateTimerDisplay();
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimerDisplay();
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          // Deshabilitar formulario
+          const radios = testForm.querySelectorAll('input[type="radio"]');
+          radios.forEach(r => r.disabled = true);
+          submitTestBtn.disabled = true;
+          // Auto-submit sin verificar completitud
+          const formData = new FormData(testForm);
+          showResults(formData);
+        }
+      }, 1000);
+    }
+
     // Construir formulario del test
     function buildTestForm(questions) {
       testForm.innerHTML = ''; // reset
       resultContainer.innerHTML = '';
       submitTestBtn.style.display = 'inline-block';
       restartBtn.style.display = 'none';
+      submitTestBtn.disabled = false;
 
       questions.forEach((q, i) => {
         const container = createElement('div', {className:'question-container'});
@@ -245,7 +333,7 @@
 
       questionsData.forEach((q,i) => {
         const userAnswer = answers.get(`question${i}`);
-        const isCorrect = Number(userAnswer) === q.answer;
+        const isCorrect = userAnswer !== undefined && Number(userAnswer) === q.answer;
         if(isCorrect) correctCount++;
 
         const container = createElement('div', {className:'question-container'});
@@ -253,7 +341,9 @@
         container.appendChild(qText);
 
         const feedback = createElement('div', {className: 'answer-feedback ' + (isCorrect ? 'correct' : 'incorrect')});
-        if(isCorrect) {
+        if (userAnswer === undefined) {
+          feedback.textContent = `No respondida ❌. Respuesta correcta: "${q.options[q.answer]}"`;
+        } else if(isCorrect) {
           feedback.textContent = `Correcto ✅`;
         } else {
           feedback.textContent = `Incorrecto ❌. Respuesta correcta: "${q.options[q.answer]}"`;
@@ -266,16 +356,20 @@
       resultContainer.insertBefore(summary, resultContainer.firstChild);
     }
 
-    // Iniciar test
-    buildTestForm(questionsData);
+    // Evento para botón de inicio
+    startBtn.addEventListener('click', () => {
+      startSection.style.display = 'none';
+      testSection.style.display = 'block';
+      buildTestForm(questionsData);
+      startTimer();
+    });
 
-    // Mostrar botón enviar después de cargar preguntas
-    submitTestBtn.style.display = 'inline-block';
-
+    // Evento para enviar (verifica completitud solo si no ha terminado el tiempo)
     submitTestBtn.addEventListener('click', () => {
+      if (submitTestBtn.disabled) return;
       const formData = new FormData(testForm);
 
-      // Verificar que todas las preguntas tienen respuesta
+      // Verificar que todas las preguntas tienen respuesta (solo para submit manual)
       for(let i=0; i<questionsData.length; i++) {
         if(!formData.has(`question${i}`)) {
           alert(`Por favor responde la pregunta ${i+1}.`);
@@ -285,12 +379,14 @@
       showResults(formData);
     });
 
+    // Evento para reiniciar (vuelve al inicio)
     restartBtn.addEventListener('click', () => {
-      // Reiniciar todo para hacer el test nuevamente
+      if (timerInterval) clearInterval(timerInterval);
+      startSection.style.display = 'block';
+      testSection.style.display = 'none';
+      timer.style.display = 'none';
       resultContainer.innerHTML = '';
-      buildTestForm(questionsData);
-      submitTestBtn.style.display = 'inline-block';
-      restartBtn.style.display = 'none';
+      testForm.innerHTML = '';
     });
   })();
 </script>

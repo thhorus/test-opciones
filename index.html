@@ -195,7 +195,7 @@
     const timer = document.getElementById('timer');
 
     let timerInterval;
-    let timeLeft = 90;
+    let timeLeft = 120;
 
     // Preguntas definidas 
     const questionsData = [
@@ -376,6 +376,11 @@
           return;
         }
       }
+      // Detener el temporizador al enviar manualmente
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
       showResults(formData);
     });
 
@@ -392,5 +397,3 @@
 </script>
 </body>
 </html>
-
-
